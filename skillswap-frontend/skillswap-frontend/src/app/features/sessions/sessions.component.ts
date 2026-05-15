@@ -51,6 +51,7 @@ export class SessionsComponent implements OnInit {
       duracionMinutos: [60, [Validators.required, Validators.min(15)]],
       enlaceMeeting: [''],
       enlaceGithub: [''],
+      telefonoContacto: [''], // NUEVO: Campo para WhatsApp
     });
   }
 
@@ -75,7 +76,8 @@ export class SessionsComponent implements OnInit {
           error: () => {
             const nombre = params['receptorNombre'] || '';
             if (nombre) {
-              this.selectedReceptor = { id: receptorId, nombre: nombre.split(' ')[0], apellido: nombre.split(' ')[1] ?? '', email: '', username: '', habilidades: [], intereses: [] };
+              // Por esta otra (le hemos añadido el rol al final):
+this.selectedReceptor = { id: receptorId, nombre: nombre.split(' ')[0], apellido: nombre.split(' ')[1] ?? '', email: '', username: '', habilidades: [], intereses: [], rol: 'USER' };
             }
           }
         });
@@ -126,7 +128,8 @@ export class SessionsComponent implements OnInit {
       duracionMinutos: +v.duracionMinutos,
       enlaceMeeting: v.enlaceMeeting || undefined,
       enlaceGithub: v.enlaceGithub || undefined,
-      tecnologiaId: v.tecnologiaId ? +v.tecnologiaId : undefined
+      tecnologiaId: v.tecnologiaId ? +v.tecnologiaId : undefined,
+      telefonoContacto: v.telefonoContacto || undefined // NUEVO: Lo enviamos al backend
     };
     this.sessionService.createSession(request).subscribe({
       next: s => {
@@ -171,5 +174,16 @@ export class SessionsComponent implements OnInit {
   statusLabel(status: string): string {
     const m: Record<string, string> = { PENDIENTE: 'Pendiente', CONFIRMADA: 'Confirmada', COMPLETADA: 'Completada', CANCELADA: 'Cancelada' };
     return m[status] ?? status;
+  }
+
+  // NUEVO: Función para abrir WhatsApp
+  contactarPorWhatsApp(telefono: string | undefined): void {
+    if (!telefono) return;
+    let numeroLimpio = telefono.replace(/\D/g, '');
+    if (numeroLimpio.length === 9) {
+      numeroLimpio = '34' + numeroLimpio;
+    }
+    const url = `https://wa.me/${numeroLimpio}`;
+    window.open(url, '_blank');
   }
 }

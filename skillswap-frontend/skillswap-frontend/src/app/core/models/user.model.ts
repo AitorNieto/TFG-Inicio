@@ -1,39 +1,34 @@
 export interface Tecnologia {
   id: number;
   nombre: string;
+  iconoUrl?: string;
   categoria?: string;
   icono?: string;
-  iconoUrl?: string; // Fusionado
 }
 
 export interface UserProfile {
   id: number;
-  username: string;
   nombre: string;
   apellido: string;
-  email?: string;
-  experiencia_breve?: string;
+  email: string;
+  username: string;
+  avatarUrl?: string;
   bio?: string;
   ubicacion?: string;
   github?: string;
   linkedin?: string;
-  imagen_perfil?: string;
-  avatarUrl?: string; 
+  habilidades: Tecnologia[];
+  intereses: Tecnologia[];
   valoracionMedia?: number;
   totalResenas?: number;
   sesionesCompletadas?: number;
-  habilidades: Tecnologia[];
-  intereses: Tecnologia[];
+  rachaDiasAprendiendo?: number;
+  fechaRegistro?: string;
+  activo?: boolean;
+  rol: string;
+  baneadoHasta?: string;
+  motivoBaneo?: string;
 }
-
-export interface Match {
-  usuario: UserProfile;
-  habilidadesQueOfrece: Tecnologia[];
-  habilidadesQueNecesita: Tecnologia[];
-  puntuacionMatch: number;
-}
-
-// ─── REQUESTS Y RESPONSES PARA REGISTRO Y LOGIN ───
 
 export interface TecnologiaDetalleRequest {
   tecnologiaId: number;
@@ -49,6 +44,7 @@ export interface AuthResponse {
   username: string;
   email: string;
   roles: string[];
+  rol: string;
 }
 
 export interface AuthRequest {
@@ -62,8 +58,18 @@ export interface RegisterRequest {
   email: string;
   username: string;
   password: string;
-  experienciaBreve?: string; 
-  imagenPerfil?: string;     
-  tecnologiasDomina: TecnologiaDetalleRequest[]; 
+  experienciaBreve?: string;
+  imagenPerfil?: string;
+  tecnologiasDomina: TecnologiaDetalleRequest[];
   tecnologiasAprendeIds: number[];
+}
+
+export interface Match {
+  usuario: UserProfile;
+  puntuacionMatch: number;
+  matchPerfecto: boolean;
+  habilidadesQueOfrece: Tecnologia[];
+  habilidadesQueNecesita: Tecnologia[];
+  todasLasHabilidades: Tecnologia[];
+  todosLosIntereses: Tecnologia[];
 }

@@ -1,0 +1,40 @@
+<div class="minijuegos-container">
+  <h1 class="title">Reto de Programación Diario 💻</h1>
+
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando el reto de hoy...</p>
+  </div>
+
+  <div *ngIf="!loading && quiz" class="quiz-card">
+    <div class="badges-container">
+      <span class="badge category-badge">{{ quiz.category }}</span>
+      <span class="badge difficulty-badge">{{ quiz.difficulty }}</span>
+    </div>
+
+    <h3 class="question-text">{{ quiz.text }}</h3>
+
+    <div class="options-container">
+      <button *ngFor="let answer of quiz.answers" 
+              (click)="verificarRespuesta(answer.isCorrect)" 
+              [disabled]="respondido"
+              class="option-btn"
+              [class.selected]="respondido">
+        {{ answer.text }}
+      </button>
+    </div>
+
+    <div *ngIf="respondido" 
+         class="result-box"
+         [ngClass]="esCorrecto ? 'result-success' : 'result-error'">
+      
+      <h4 class="result-title">
+        {{ esCorrecto ? '¡Correcto! Has ganado puntos. 🎉' : '¡Fallaste! Inténtalo de nuevo. 😅' }}
+      </h4>
+      
+      <p class="explanation-text"><strong>Por qué:</strong> {{ quiz.explanation }}</p>
+      
+      <button (click)="loadQuiz()" class="next-btn">Siguiente Reto 🔄</button>
+    </div>
+  </div>
+</div>

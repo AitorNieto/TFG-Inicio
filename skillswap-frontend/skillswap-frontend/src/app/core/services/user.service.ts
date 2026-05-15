@@ -42,10 +42,24 @@ export class UserService {
     );
   }
 
+  getAllUsers(): Observable<UserProfile[]> {
+    return this.http.get<any[]>(`${environment.apiUrl}/users/all`).pipe(
+      map(list => list.map(r => this.mapToUserProfile(r)))
+    );
+  }
+
   updateMyProfile(request: UpdateProfileRequest): Observable<UserProfile> {
     return this.http.put<any>(`${environment.apiUrl}/users/me`, request).pipe(
       map(r => this.mapToUserProfile(r))
     );
+  }
+
+  banearUsuario(id: number, motivo: string, dias: number, horas: number): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/users/${id}/ban`, { motivo, dias, horas });
+  }
+
+  desbanearUsuario(id: number): Observable<any> {
+    return this.http.put(`${environment.apiUrl}/users/${id}/unban`, {});
   }
 
   private mapToUserProfile(r: any): UserProfile {
@@ -65,6 +79,10 @@ export class UserService {
       sesionesCompletadas:  r.sesionesCompletadas ?? undefined,
       habilidades:          r.habilidades ?? r.tecnologias_domina ?? [],
       intereses:            r.intereses ?? r.tecnologias_aprende ?? [],
+      rachaDiasAprendiendo: r.rachaDiasAprendiendo ?? r.racha_dias_aprendiendo ?? 0,
+      rol:                  r.rol ?? 'USER',
+      baneadoHasta:         r.baneadoHasta ?? undefined,
+      motivoBaneo:          r.motivoBaneo ?? undefined
     };
   }
 }

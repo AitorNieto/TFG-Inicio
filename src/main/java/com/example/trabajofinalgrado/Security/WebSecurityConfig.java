@@ -5,7 +5,6 @@ import com.example.trabajofinalgrado.Security.JWT.AuthTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -56,6 +55,7 @@ public class WebSecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    // ─── FIX #2: Configuración CORS para permitir peticiones desde Angular ───
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
@@ -72,24 +72,28 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+            // FIX #2: Activar CORS con nuestra configuración
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
+
+            // Manejar errores de autenticación (401)
             .exceptionHandling(ex -> ex.authenticationEntryPoint(unauthorizedHandler))
+
+            // FIX #1a: JWT es stateless → NO usar sesiones HTTP
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
             .authorizeHttpRequests(auth -> auth
-                // Vital: Permitir tráfico OPTIONS para evitar bloqueos falsos de CORS
-                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                
-                // Rutas públicas
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/tecnologias/**").permitAll()
-                .requestMatchers("/api/users/search").permitAll()
-                .requestMatchers("/api/matching/**").permitAll()
-                
-                // Todo lo demás requiere login
+                .requestMatchers("/api/matching").permitAll()
+                .requestMatchers("/api/users/{id}").permitAll()
                 .anyRequest().authenticated()
             )
+
             .authenticationProvider(authenticationProvider())
+
+            // FIX #1b: REGISTRAR el filtro JWT ANTES del filtro de usuario/contraseña
+            // Sin esta línea el token jamás se valida → 403 en todo
             .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

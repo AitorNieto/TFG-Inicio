@@ -17,14 +17,12 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
-  // ─── LOGIN ─────
   login(request: AuthRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${environment.apiUrl}/auth/signin`, request).pipe(
       tap(response => this.handleAuth(response))
     );
   }
 
-  // ─── REGISTRO (Corregida la URL y el tipo de respuesta) ──
   register(request: RegisterRequest): Observable<any> {
     return this.http.post(`${environment.apiUrl}/auth/register`, request);
   }
@@ -63,10 +61,12 @@ export class AuthService {
       id:         response.id,
       username:   response.username,
       email:      response.email,
-      nombre:     response.username, // el back no devuelve nombre en signin
+      nombre:     response.username,
       apellido:   '',
       habilidades: [],
-      intereses:   []
+      intereses:   [],
+      rachaDiasAprendiendo: undefined,
+      rol: response.rol ?? 'USER'
     };
 
     localStorage.setItem(this.USER_KEY, JSON.stringify(user));

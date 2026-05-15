@@ -43,7 +43,18 @@ public class UserController {
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         return ResponseEntity.ok(toMap(user, true));
     }
-
+// ==========================================
+    // NUEVO MÉTODO PARA LISTAR TODOS LOS USUARIOS
+    // ==========================================
+    @GetMapping("/all")
+    @Transactional(readOnly = true)
+    public ResponseEntity<List<Map<String, Object>>> getAllUsers() {
+        // Buscamos todos los usuarios y los convertimos al formato seguro (sin contraseñas)
+        List<Map<String, Object>> results = userRepository.findAll().stream()
+                .map(u -> toMap(u, false))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(results);
+    }
     // ==========================================
     // NUEVO MÉTODO PARA ACTUALIZAR EL PERFIL
     // ==========================================
@@ -94,21 +105,69 @@ public class UserController {
         return ResponseEntity.ok(toMap(user, false));
     }
 
-    @GetMapping("/search")
+@GetMapping("/search")
     @Transactional(readOnly = true)
     public ResponseEntity<List<Map<String, Object>>> searchUsers(@RequestParam String q) {
         String query = q.toLowerCase().trim();
         List<Map<String, Object>> results = userRepository.findAll().stream()
-                .filter(u -> u.getNombre().toLowerCase().contains(query)
-                        || u.getApellido().toLowerCase().contains(query)
-                        || u.getUsername().toLowerCase().contains(query)
-                        || u.getEmail().toLowerCase().contains(query))
-                .limit(10)
+                .filter(u -> 
+                        // Buscamos en nombre, apellido o username (con comprobación de nulos para que no pete)
+                        (u.getNombre() != null && u.getNombre().toLowerCase().contains(query)) ||
+                        (u.getApellido() != null && u.getApellido().toLowerCase().contains(query)) ||
+                        (u.getUsername() != null && u.getUsername().toLowerCase().contains(query)) ||
+                        (u.getUbicacion() != null && u.getUbicacion().toLowerCase().contains(query)) ||
+                        
+                        // ¡MAGIA! Buscamos también dentro de las tecnologías que domina
+                        (u.getTecnologiasDomina() != null && u.getTecnologiasDomina().stream()
+                                .anyMatch(tech -> tech.getNombre() != null && tech.getNombre().toLowerCase().contains(query)))
+                )
+                .limit(10) // Limitamos a 10 para no saturar la pantalla
                 .map(u -> toMap(u, false))
                 .collect(Collectors.toList());
+                
         return ResponseEntity.ok(results);
     }
+// ==========================================
+    // MÉTODO PARA BANEAR USUARIOS (Actualizado con Horas)
+    // ==========================================
+    @PutMapping("/{id}/ban")
+    @Transactional
+    public ResponseEntity<?> banUser(@PathVariable Long id, @RequestBody com.example.trabajofinalgrado.DTOs.Request.BanRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        // Sumamos tanto los días como las horas que vienen en el Request
+        java.time.LocalDateTime fechaFinBaneo = java.time.LocalDateTime.now()
+                .plusDays(request.getDias())
+                .plusHours(request.getHoras()); // <-- ¡Esto es lo que faltaba!
+
+        user.setBaneadoHasta(fechaFinBaneo);
+        user.setMotivoBaneo(request.getMotivo());
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of(
+            "mensaje", "Usuario baneado correctamente",
+            "baneadoHasta", fechaFinBaneo.toString()
+        ));
+    }
+
+    // ==========================================
+    // MÉTODO PARA QUITAR EL BANEO (Se queda igual)
+    // ==========================================
+    @PutMapping("/{id}/unban")
+    @Transactional
+    public ResponseEntity<?> unbanUser(@PathVariable Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        user.setBaneadoHasta(null);
+        user.setMotivoBaneo(null);
+
+        userRepository.save(user);
+
+        return ResponseEntity.ok(Map.of("mensaje", "Usuario desbaneado correctamente"));
+    }
     // He añadido los campos extra (bio, ubicacion, etc) para que Angular los reciba correctamente
     private Map<String, Object> toMap(User user, boolean includeEmail) {
         Map<String, Object> data = new HashMap<>();
@@ -122,7 +181,9 @@ public class UserController {
         data.put("github", user.getGithub());
         data.put("linkedin", user.getLinkedin());
         data.put("imagen_perfil", user.getImagenPerfil());
-        
+        data.put("racha_dias_aprendiendo", user.getRachaDiasAprendiendo());
+        data.put("rachaDiasAprendiendo", user.getRachaDiasAprendiendo());
+        data.put("rol", user.getRol());
         data.put("tecnologias_domina", user.getTecnologiasDomina().stream()
                 .map(t -> Map.of("id", t.getId(), "nombre", t.getNombre(),
                         "iconoUrl", t.getIconoUrl() != null ? t.getIconoUrl() : ""))
